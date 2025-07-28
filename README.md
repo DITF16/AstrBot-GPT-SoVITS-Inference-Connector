@@ -1,9 +1,66 @@
-# helloworld
+# AstrBot GPT-SoVITS推理特化包连接器
 
-AstrBot 插件模板
+![版本](https://img.shields.io/badge/version-1.0.0-blue)
+![框架](https://img.shields.io/badge/AstrBot-%3E%3D3.5-brightgreen)
+![许可](https://img.shields.io/badge/license-MIT-green)
 
-A template plugin for AstrBot plugin feature
+这是一个为 [AstrBot](https://github.com/AstrBotDevs/AstrBot) 框架设计的插件，用于对接 **GPT-SoVITS推理特化包** 语音合成（TTS）服务。它允许您的机器人拥有一个可高度定制的、富有表现力的声音。
 
-# 支持
+## ✨ 功能特性
 
-[帮助文档](https://astrbot.app)
+* **🚀 标准化接口**：支持基于 `POST /v1/audio/speech` 的现代 TTS API，结构清晰，易于对接。
+* **🗣️ 两种触发模式**：
+    * **指令模式**：通过 `/说` 或 `/say` 命令，让机器人说出您指定的任何内容。
+    * **自动语音模式**：机器人（LLM）的文本回复有一定概率被自动转换为语音消息发送，带来更生动的互动体验。
+* **⚙️ 高度可配置**：所有 API 参数均可通过 AstrBot 的后台管理界面进行配置，无需修改代码。包括模型、说话人(声音)、语速、音频格式等。
+* **🔄 优雅降级**：在自动语音模式下，如果 TTS 服务连接失败或合成出错，插件会自动退回发送原始的文本消息，保证服务不中断。
+* **🗑️ 自动清理**：插件会自动将生成的临时语音文件保存在独立的 `temp` 目录中，并定时清理，防止磁盘空间被占用。
+
+## 📋 先决条件
+
+在安装此插件之前，请确保您已满足以下条件：
+
+1.  **AstrBot 框架**：版本建议 `v3.5.22` 或更高。
+2.  **TTS 服务**：您需要在本地或服务器上部署一个 GPT-SoVITS推理特化包 或兼容的 TTS 服务，并确保它可以从运行 AstrBot 的机器上通过网络访问。
+
+## 📦 安装
+
+1.  通过 市场(暂时未上架) 或 在webui页面通过链接或压缩包进行安装
+2. 重启您的 AstrBot。
+
+## 🔧 配置
+
+安装并重启后，进入 AstrBot 后台管理界面，在“已安装”中找到本插件，点击“配置”按钮进行设置。
+
+#### 1. 基础配置 (`base_setting`)
+
+* **TTS API 的基础 URL (`base_url`)**：**此项必填！** 这是您部署的 TTS 服务的网络地址，例如 `http://127.0.0.1:8000` 或 `http://your-server-ip:8000`。
+
+#### 2. TTS 核心参数 (`tts_params`)
+
+这些是决定语音合成质量的关键参数。
+* **模型 (`model`)**：选择 TTS 服务支持的模型版本，例如 `tts-v4`。
+* **说话人 (`voice`)**：指定要使用的声音/角色名称，例如 `原神-中文-迪奥娜_ZH`。
+* **音频格式 (`response_format`)**：选择返回的音频格式，建议使用 `wav` 或 `mp3`。
+* **语速 (`speed`)**：控制语音的播放速度，`1.0` 为正常语速。
+
+#### 3. TTS 其他高级参数 (`other_params`)
+
+这些参数用于对语音合成进行更精细的调整，在大多数情况下保持默认即可。
+
+#### 4. 主动调用配置 (`auto_config`)
+
+* **主动转语音发送的概率 (`send_record_probability`)**：设置一个 0 到 1 之间的小数，代表 LLM 的回复被自动转为语音的概率。例如 `0.2` 代表 20% 的概率。
+* **文本长度限制 (`max_resp_text_len`)**：超过此长度的文本将不会被自动转为语音。
+
+#### 5. 临时文件清理配置 (`cleanup_setting`)
+
+* **清理间隔 (`cleanup_interval`)**：设置自动清理临时语音文件夹的间隔时间，单位为小时。设置为 `0` 可禁用此功能。
+
+---
+
+## 📄 许可
+本插件使用 MIT 许可。
+
+## 🙏 致谢
+[AstrBot](https://github.com/AstrBotDevs/AstrBot)  - 提供了功能强大且易于扩展的机器人框架。
