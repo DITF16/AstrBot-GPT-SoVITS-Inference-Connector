@@ -1,0 +1,184 @@
+{
+    "base_setting": {
+        "description": "基础配置",
+        "type": "object",
+        "items": {
+            "base_url": {
+                "description": "TTS API 的基础 URL",
+                "type": "string",
+                "hint": "必填！例如：http://127.0.0.1:8000。",
+                "default": "http://127.0.0.1:8000"
+            }
+        }
+    },
+    "tts_params": {
+        "description": "TTS 核心参数",
+        "type": "object",
+        "items": {
+            "model": {
+                "description": "选择要使用的语音模型版本",
+                "type": "string",
+                "options": [
+                    "tts-v2",
+                    "tts-v3",
+                    "tts-v4",
+                    "tts-v2Pro",
+                    "tts-v2ProPlus"
+                ],
+                "default": "tts-v4"
+            },
+            "voice": {
+                "description": "指定使用的说话人/声音",
+                "type": "string",
+                "hint": "例如：原神-中文-迪奥娜_ZH",
+                "default": "原神-中文-迪奥娜_ZH"
+            },
+            "response_format": {
+                "description": "返回的音频格式",
+                "type": "string",
+                "options": [
+                    "mp3",
+                    "wav",
+                    "aac"
+                ],
+                "default": "wav"
+            },
+            "speed": {
+                "description": "语音播放速度",
+                "type": "float",
+                "hint": "1.0 为正常速度",
+                "default": 1.0
+            }
+        }
+    },
+    "other_params": {
+        "description": "TTS 其他高级参数",
+        "type": "object",
+        "items": {
+            "app_key": {
+                "description": "应用授权Key",
+                "type": "string",
+                "default": ""
+            },
+            "text_lang": {
+                "description": "输入文本的语言",
+                "type": "string",
+                "default": "中文"
+            },
+            "prompt_lang": {
+                "description": "参考语言",
+                "type": "string",
+                "default": "中文"
+            },
+            "emotion": {
+                "description": "参考情感",
+                "type": "string",
+                "default": "默认"
+            },
+            "top_k": {
+                "description": "Top-K 采样",
+                "type": "int",
+                "default": 10
+            },
+            "top_p": {
+                "description": "Top-P 采样",
+                "type": "float",
+                "default": 1.0
+            },
+            "temperature": {
+                "description": "温度 (随机性)",
+                "type": "float",
+                "default": 1.0
+            },
+            "text_split_method": {
+                "description": "文本切分方法",
+                "type": "string",
+                "options": [
+                    "不切",
+                    "凑四句一切",
+                    "凑50字一切",
+                    "按中文句号。切",
+                    "按英文句号.切",
+                    "按标点符号切"
+                ],
+                "default": "按中文句号。切"
+            },
+            "fragment_interval": {
+                "description": "语音片段之间的间隔时间",
+                "type": "float",
+                "default": 0.3
+            },
+            "repetition_penalty": {
+                "description": "重复惩罚因子",
+                "type": "float",
+                "default": 1.35
+            },
+            "seed": {
+                "description": "随机种子 (-1为随机)",
+                "type": "int",
+                "default": -1
+            },
+            "sample_steps": {
+                "description": "采样步数",
+                "type": "int",
+                "default": 16
+            },
+             "batch_size": {
+                "description": "批处理大小",
+                "type": "int",
+                "default": 1
+            },
+            "batch_threshold": {
+                "description": "批处理阈值",
+                "type": "float",
+                "default": 0.75
+            },
+            "split_bucket": {
+                "description": "启用分割桶",
+                "type": "bool",
+                "default": false
+            },
+            "parallel_infer": {
+                "description": "启用并行推理",
+                "type": "bool",
+                "default": true
+            },
+            "if_sr": {
+                "description": "启用超分辨率",
+                "type": "bool",
+                "default": false
+            }
+        }
+    },
+    "auto_config": {
+        "description": "主动调用配置",
+        "type": "object",
+        "hint": "本插件有一定概率主动将bot本来要发送的文本转成语音发送",
+        "items": {
+            "send_record_probability": {
+                "description": "主动转语音发送的概率",
+                "type": "float",
+                "hint": "0到1之间的小数，0为不触发，1为100%触发",
+                "default": 0.3
+            },
+            "max_resp_text_len": {
+                "description": "文本长度限制",
+                "type": "int",
+                "hint": "超过此长度的文本不会被转成语音发送",
+                "default": 200
+            }
+        }
+    },
+    "cleanup_setting": {
+        "description": "临时文件清理配置",
+        "type": "object",
+        "items": {
+            "cleanup_interval": {
+                "description": "定时清理temp文件夹的间隔（小时）",
+                "type": "float",
+                "hint": "设置为0或负数则禁用定时清理功能。支持小数，例如0.5代表半小时。",
+                "default": 1.0
+            }
+        }
+    }
+}
