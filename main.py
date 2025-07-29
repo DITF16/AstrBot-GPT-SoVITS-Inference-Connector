@@ -2,13 +2,16 @@ import asyncio
 import re
 import random
 import aiohttp
+import json
 from astrbot import logger
 from astrbot.api.event import filter
+from astrbot.api.provider import LLMResponse
 from astrbot.api.star import Context, Star, register
 from astrbot.core import AstrBotConfig
 from astrbot.core.message.components import Record
+from astrbot.core.message.message_event_result import MessageChain
 from astrbot.core.platform import AstrMessageEvent
-import astrbot.core.message.components as Comp
+import astrbot.api.message_components as Comp
 from pathlib import Path
 from typing import Dict
 
@@ -30,7 +33,7 @@ class GSVPlugin(Star):
         self.send_record_probability: float = auto_config.get(
             "send_record_probability", 0.3
         )
-        self.max_resp_text_len: int = auto_config.get("max_resp_text_len", 200)
+        self.max_resp_text_len: int = auto_config.get("max_resp_text_len", 100)
 
         # 加载TTS参数
         self.tts_core_params: Dict = config.get("tts_params", {})
@@ -48,7 +51,6 @@ class GSVPlugin(Star):
 
         if not self.base_url:
             logger.error("TTS插件未配置base_url，插件将无法工作！")
-
 
     def _perform_cleanup(self):
         """清理temp文件夹中的所有文件"""
@@ -68,7 +70,6 @@ class GSVPlugin(Star):
                 logger.info("没有需要清理的临时文件。")
         except Exception as e:
             logger.error(f"清理任务执行期间发生错误: {e}")
-
 
     async def _periodic_cleanup(self):
         """后台定时任务，用于周期性清理临时文件夹"""
@@ -102,34 +103,50 @@ class GSVPlugin(Star):
             logger.error(f"发生未知错误：{e}")
             return None
 
-    @filter.on_decorating_result()
-    async def on_decorating_result(self, event: AstrMessageEvent):
-        """将LLM生成的文本按概率生成语音并发送"""
+
+    @filter.on_llm_response()
+    async def on_llm_resp(self, event: AstrMessageEvent, resp: LLMResponse):
+        """在LLM响应后，按概率将文本转为语音"""
         if random.random() > self.send_record_probability:
             return
 
-        chain = event.get_result().chain
-        if not chain:
+        result_chain = resp.result_chain
+        # MessageChain(chain=[Plain(type='Plain', text=' ', convert=True)], use_t2i_=None, type=None)
+
+        original_text = result_chain.get_plain_text()
+
+        # 解析LLM回复，提取纯语言信息用于TTS
+        # 移除格式： （动作信息） 【附加信息】 [好感度标记]
+        text_to_speak = re.sub(r"（.*?）|【.*?】|\[.*?\]", "", original_text).strip()
+
+        # 长度判断
+        if len(text_to_speak) > self.max_resp_text_len:
             return
 
-        seg = chain[0]
-
-        if not (len(chain) == 1 and isinstance(seg, Comp.Plain)):
+        # 如果解析后没有可说的内容，则直接返回，发送原始文本
+        if not text_to_speak:
             return
 
-        resp_text = seg.text
-        if len(resp_text) > self.max_resp_text_len:
-            return
+        # 尝试语音合成
+        file_name = self.generate_file_name(event, text_to_speak)
+        save_path = await self.tts_inference(text=text_to_speak, file_name=file_name)
 
-        file_name = self.generate_file_name(event, resp_text)
-        save_path = await self.tts_inference(text=resp_text, file_name=file_name)
-
+        # 根据结果决定如何响应
         if save_path:
-            logger.info(f"TTS自动任务执行成功，发送语音: {file_name}")
-            chain.clear()
-            chain.append(Record.fromFileSystem(save_path))
+            # 成功：发送语音
+            logger.info(f"LLM响应转语音成功，发送语音: {file_name}")
+
+            chain = [
+                Comp.Plain(original_text),
+                Comp.Record(file=save_path)
+            ]
+
+            await event.send(MessageChain(chain))
+            return
+
         else:
-            logger.error("TTS自动任务执行失败，将返回原始文本。")
+            # 失败：记录日志并放行，框架将发送原始文本
+            logger.error("LLM响应转语音失败，将返回原始文本。")
 
     @filter.permission_type(filter.PermissionType.ADMIN)
     @filter.command("说")
